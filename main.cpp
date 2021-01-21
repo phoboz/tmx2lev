@@ -4,9 +4,20 @@
 #include "tile_types.h"
 #include "Tmx.h"
 
+enum direction
+{
+  N, W, S, E, NW, SW, NE, SE, MAX_DIRECTION
+};
+
 void write_word(short value, FILE *fp) {
+#define SWAP
+#ifdef SWAP
   fputc((value & 0xff00) >> 8, fp);
   fputc(value & 0x00ff, fp);
+#else
+  short to_write = value;
+  fwrite(&to_write, sizeof(to_write), 1, fp);
+#endif
 }
 
 char get_tile_type(const char *str)
@@ -43,6 +54,31 @@ int get_max_tiles(const Tmx::Tileset *tileset)
   return max_tiles_x * max_tiles_y;
 }
 
+enum direction get_direction(const char *str)
+{
+  enum direction dir;
+
+  if (strcmp(str, "N") == 0)
+    dir = N;
+  else if (strcmp(str, "W") == 0)
+    dir = W;
+  else if (strcmp(str, "S") == 0)
+    dir = S;
+  else if (strcmp(str, "E") == 0)
+    dir = E;
+  else if (strcmp(str, "NW") == 0)
+    dir = NW;
+  else if (strcmp(str, "SW") == 0)
+    dir = SW;
+  else if (strcmp(str, "NE") == 0)
+    dir = NE;
+  else if (strcmp(str, "SE") == 0)
+    dir = SE;
+  else
+    dir = MAX_DIRECTION;
+
+  return dir;
+}
 
 int main(int argc, char **argv) {
   if (argc < 3) {
@@ -144,6 +180,41 @@ printf("parsed map...\n");
     }
   }
 #endif
+
+  const int num_groups = map->GetNumObjectGroups();
+  if (num_groups > 0)
+  {
+    printf("Found %d object group(s)\n", num_groups);
+
+    for (int i = 0; i < num_groups; i++)
+    {
+      const Tmx::ObjectGroup *group = map->GetObjectGroup(i);
+      const int num_objects = group->GetNumObjects();
+
+      if (num_objects > 0)
+      {
+        printf("%s has %d object(s)\n", group->GetName().c_str(), num_objects);
+        write_word((short) num_objects, fp);
+
+        for (int j = 0; j < num_objects; j++)
+        {
+          const Tmx::Object *object = group->GetObject(j);
+
+          const Tmx::PropertySet prop = object->GetProperties();
+          int type = prop.GetNumericProperty(std::string("type"));
+          std::string dir_name = prop.GetLiteralProperty(std::string("direction"));
+          enum direction dir = get_direction(dir_name.c_str());
+
+          printf("\tObject %s of type: %d at: (%d, %d), facing %d(%s)\n", object->GetName().c_str(), type, object->GetX(), object->GetY(), dir, dir_name.c_str());
+
+          fputc((char) type, fp);
+          fputc((char) dir, fp);
+          write_word((short) object->GetX(), fp);
+          write_word((short) object->GetY(), fp);
+        }
+      }
+    }
+  }
 
   return 0;
 }
