@@ -9,6 +9,12 @@ enum direction
   N, W, S, E, NW, SW, NE, SE, MAX_DIRECTION
 };
 
+enum area_type
+{
+  AREA_TYPE_UNKNOWN,
+  AREA_TYPE_DOOR
+};
+
 void write_word(short value, FILE *fp) {
 #define SWAP
 #ifdef SWAP
@@ -78,6 +84,18 @@ enum direction get_direction(const char *str)
     dir = MAX_DIRECTION;
 
   return dir;
+}
+
+enum area_type get_area_type(const char *str)
+{
+  enum area_type type;
+
+  if (strcmp(str, "door") == 0)
+    type = AREA_TYPE_DOOR;
+  else
+    type = AREA_TYPE_UNKNOWN;
+
+  return type;
 }
 
 int main(int argc, char **argv) {
@@ -186,9 +204,20 @@ printf("parsed map...\n");
   {
     printf("Found %d object group(s)\n", num_groups);
 
+    int enemies_index = -1;
     for (int i = 0; i < num_groups; i++)
     {
       const Tmx::ObjectGroup *group = map->GetObjectGroup(i);
+      if (strcmp(group->GetName().c_str(), "enemies") == 0)
+      {
+        enemies_index = i;
+        break;
+      }
+    }
+
+    if (enemies_index >= 0)
+    {
+      const Tmx::ObjectGroup *group = map->GetObjectGroup(enemies_index);
       const int num_objects = group->GetNumObjects();
 
       if (num_objects > 0)
@@ -205,12 +234,61 @@ printf("parsed map...\n");
           std::string dir_name = prop.GetLiteralProperty(std::string("direction"));
           enum direction dir = get_direction(dir_name.c_str());
 
-          printf("\tObject %s of type: %d at: (%d, %d), facing %d(%s)\n", object->GetName().c_str(), type, object->GetX(), object->GetY(), dir, dir_name.c_str());
+          printf("\tenemy(%s) of type: %d at: (%d, %d), facing %d(%s)\n", object->GetName().c_str(), type, object->GetX(), object->GetY(), dir, dir_name.c_str());
 
           fputc((char) type, fp);
           fputc((char) dir, fp);
           write_word((short) object->GetX(), fp);
           write_word((short) object->GetY(), fp);
+        }
+      }
+    }
+
+
+    int areas_index = -1;
+    for (int i = 0; i < num_groups; i++)
+    {
+      const Tmx::ObjectGroup *group = map->GetObjectGroup(i);
+      if (strcmp(group->GetName().c_str(), "areas") == 0)
+      {
+        areas_index = i;
+        break;
+      }
+    }
+
+    if (areas_index >= 0)
+    {
+      const Tmx::ObjectGroup *group = map->GetObjectGroup(areas_index);
+      const int num_objects = group->GetNumObjects();
+      if (num_objects > 0)
+      {
+        printf("%s has %d object(s)\n", group->GetName().c_str(), num_objects);
+        write_word((short) num_objects, fp);
+
+        for (int j = 0; j < num_objects; j++)
+        {
+          const Tmx::Object *object = group->GetObject(j);
+
+          const Tmx::PropertySet prop = object->GetProperties();
+          std::string type_name = prop.GetLiteralProperty(std::string("type"));
+          enum area_type type = get_area_type(type_name.c_str());
+          int level = prop.GetNumericProperty(std::string("level"));
+          int start_x = prop.GetNumericProperty(std::string("start_x"));
+          int start_y = prop.GetNumericProperty(std::string("start_y"));
+          std::string dir_name = prop.GetLiteralProperty(std::string("direction"));
+          enum direction dir = get_direction(dir_name.c_str());
+
+          printf("\tarea(%s) of type: %d at: (%d, %d) size(%d x %d), level %d, start (%d, %d), facing %d(%s)\n", object->GetName().c_str(), type, object->GetX(), object->GetY(), object->GetWidth(), object->GetHeight(), level, start_x, start_y, dir, dir_name.c_str());
+
+          fputc((char) type, fp);
+          write_word((short) level, fp);
+          write_word((short) start_x, fp);
+          write_word((short) start_y, fp);
+          fputc((char) dir, fp);
+          write_word((short) object->GetX(), fp);
+          write_word((short) object->GetY(), fp);
+          write_word((short) object->GetWidth(), fp);
+          write_word((short) object->GetHeight(), fp);
         }
       }
     }
