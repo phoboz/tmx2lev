@@ -243,6 +243,11 @@ printf("parsed map...\n");
         }
       }
     }
+    else
+    {
+      printf("No enemies\n");
+      write_word((short) 0, fp);
+    }
 
 
     int areas_index = -1;
@@ -292,6 +297,17 @@ printf("parsed map...\n");
         }
       }
     }
+    else
+    {
+      printf("No areas\n");
+      write_word((short) 0, fp);
+    }
+  }
+  else
+  {
+    printf("No object group(s) defined\n");
+    write_word((short) 0, fp);
+    write_word((short) 0, fp);
   }
 
   return 0;
