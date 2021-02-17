@@ -302,10 +302,52 @@ printf("parsed map...\n");
       printf("No areas\n");
       write_word((short) 0, fp);
     }
+
+    int items_index = -1;
+    for (int i = 0; i < num_groups; i++)
+    {
+      const Tmx::ObjectGroup *group = map->GetObjectGroup(i);
+      if (strcmp(group->GetName().c_str(), "items") == 0)
+      {
+        items_index = i;
+        break;
+      }
+    }
+
+    if (items_index >= 0)
+    {
+      const Tmx::ObjectGroup *group = map->GetObjectGroup(items_index);
+      const int num_objects = group->GetNumObjects();
+      if (num_objects > 0)
+      {
+        printf("%s has %d object(s)\n", group->GetName().c_str(), num_objects);
+        write_word((short) num_objects, fp);
+
+        for (int j = 0; j < num_objects; j++)
+        {
+          const Tmx::Object *object = group->GetObject(j);
+
+          const Tmx::PropertySet prop = object->GetProperties();
+          int type = prop.GetNumericProperty(std::string("type"));
+
+          printf("\titem(%s) of type: %d at: (%d, %d)\n", object->GetName().c_str(), type, object->GetX(), object->GetY());
+
+          fputc((char) type, fp);
+          write_word((short) object->GetX(), fp);
+          write_word((short) object->GetY(), fp);
+        }
+      }
+    }
+    else
+    {
+      printf("No items\n");
+      write_word((short) 0, fp);
+    }
   }
   else
   {
     printf("No object group(s) defined\n");
+    write_word((short) 0, fp);
     write_word((short) 0, fp);
     write_word((short) 0, fp);
   }
