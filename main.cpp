@@ -9,6 +9,13 @@ enum direction
   N, W, S, E, NW, SW, NE, SE, MAX_DIRECTION
 };
 
+enum object_type
+{
+  OBJECT_TYPE_UNKNOWN = 0,
+  OBJECT_TYPE_ENEMY,
+  OBJECT_TYPE_ITEM
+};
+
 enum area_type
 {
   AREA_TYPE_UNKNOWN,
@@ -60,6 +67,19 @@ int get_max_tiles(const Tmx::Tileset *tileset)
   return max_tiles_x * max_tiles_y;
 }
 
+enum object_type get_object_type(const char *str)
+{
+  enum object_type type;
+
+  if (strcmp(str, "enemy") == 0)
+    type = OBJECT_TYPE_ENEMY;
+  else if (strcmp(str, "item") == 0)
+    type = OBJECT_TYPE_ITEM;
+  else
+    type = OBJECT_TYPE_UNKNOWN;
+
+  return type;
+}
 enum direction get_direction(const char *str)
 {
   enum direction dir;
@@ -204,20 +224,20 @@ printf("parsed map...\n");
   {
     printf("Found %d object group(s)\n", num_groups);
 
-    int enemies_index = -1;
+    int objects_index = -1;
     for (int i = 0; i < num_groups; i++)
     {
       const Tmx::ObjectGroup *group = map->GetObjectGroup(i);
-      if (strcmp(group->GetName().c_str(), "enemies") == 0)
+      if (strcmp(group->GetName().c_str(), "objects") == 0)
       {
-        enemies_index = i;
+        objects_index = i;
         break;
       }
     }
 
-    if (enemies_index >= 0)
+    if (objects_index >= 0)
     {
-      const Tmx::ObjectGroup *group = map->GetObjectGroup(enemies_index);
+      const Tmx::ObjectGroup *group = map->GetObjectGroup(objects_index);
       const int num_objects = group->GetNumObjects();
 
       if (num_objects > 0)
@@ -229,14 +249,18 @@ printf("parsed map...\n");
         {
           const Tmx::Object *object = group->GetObject(j);
 
+          const std::string type_name = object->GetType();
+          enum object_type object_type = get_object_type(type_name.c_str());
+
           const Tmx::PropertySet prop = object->GetProperties();
-          int type = prop.GetNumericProperty(std::string("type"));
+          int index = prop.GetNumericProperty(std::string("index"));
           std::string dir_name = prop.GetLiteralProperty(std::string("direction"));
           enum direction dir = get_direction(dir_name.c_str());
 
-          printf("\tenemy(%s) of type: %d at: (%d, %d), facing %d(%s)\n", object->GetName().c_str(), type, object->GetX(), object->GetY(), dir, dir_name.c_str());
+          printf("\t%s(%s) index=%d at: (%d, %d), facing %d(%s)\n", type_name.c_str(), object->GetName().c_str(), index, object->GetX(), object->GetY(), dir, dir_name.c_str());
 
-          fputc((char) type, fp);
+          fputc((char) object_type, fp);
+          fputc((char) index, fp);
           fputc((char) dir, fp);
           write_word((short) object->GetX(), fp);
           write_word((short) object->GetY(), fp);
@@ -245,7 +269,7 @@ printf("parsed map...\n");
     }
     else
     {
-      printf("No enemies\n");
+      printf("No objects\n");
       write_word((short) 0, fp);
     }
 
@@ -274,18 +298,19 @@ printf("parsed map...\n");
         {
           const Tmx::Object *object = group->GetObject(j);
 
+          const std::string type_name = object->GetType();
+          enum area_type area_type = get_area_type(type_name.c_str());
+
           const Tmx::PropertySet prop = object->GetProperties();
-          std::string type_name = prop.GetLiteralProperty(std::string("type"));
-          enum area_type type = get_area_type(type_name.c_str());
           int level = prop.GetNumericProperty(std::string("level"));
           int start_x = prop.GetNumericProperty(std::string("start_x"));
           int start_y = prop.GetNumericProperty(std::string("start_y"));
           std::string dir_name = prop.GetLiteralProperty(std::string("direction"));
           enum direction dir = get_direction(dir_name.c_str());
 
-          printf("\tarea(%s) of type: %d at: (%d, %d) size(%d x %d), level %d, start (%d, %d), facing %d(%s)\n", object->GetName().c_str(), type, object->GetX(), object->GetY(), object->GetWidth(), object->GetHeight(), level, start_x, start_y, dir, dir_name.c_str());
+          printf("\t%s(%s) at: (%d, %d) size(%d x %d), level %d, start (%d, %d), facing %d(%s)\n", type_name.c_str(), object->GetName().c_str(), object->GetX(), object->GetY(), object->GetWidth(), object->GetHeight(), level, start_x, start_y, dir, dir_name.c_str());
 
-          fputc((char) type, fp);
+          fputc((char) area_type, fp);
           write_word((short) level, fp);
           write_word((short) start_x, fp);
           write_word((short) start_y, fp);
@@ -302,52 +327,10 @@ printf("parsed map...\n");
       printf("No areas\n");
       write_word((short) 0, fp);
     }
-
-    int items_index = -1;
-    for (int i = 0; i < num_groups; i++)
-    {
-      const Tmx::ObjectGroup *group = map->GetObjectGroup(i);
-      if (strcmp(group->GetName().c_str(), "items") == 0)
-      {
-        items_index = i;
-        break;
-      }
-    }
-
-    if (items_index >= 0)
-    {
-      const Tmx::ObjectGroup *group = map->GetObjectGroup(items_index);
-      const int num_objects = group->GetNumObjects();
-      if (num_objects > 0)
-      {
-        printf("%s has %d object(s)\n", group->GetName().c_str(), num_objects);
-        write_word((short) num_objects, fp);
-
-        for (int j = 0; j < num_objects; j++)
-        {
-          const Tmx::Object *object = group->GetObject(j);
-
-          const Tmx::PropertySet prop = object->GetProperties();
-          int type = prop.GetNumericProperty(std::string("type"));
-
-          printf("\titem(%s) of type: %d at: (%d, %d)\n", object->GetName().c_str(), type, object->GetX(), object->GetY());
-
-          fputc((char) type, fp);
-          write_word((short) object->GetX(), fp);
-          write_word((short) object->GetY(), fp);
-        }
-      }
-    }
-    else
-    {
-      printf("No items\n");
-      write_word((short) 0, fp);
-    }
   }
   else
   {
     printf("No object group(s) defined\n");
-    write_word((short) 0, fp);
     write_word((short) 0, fp);
     write_word((short) 0, fp);
   }
