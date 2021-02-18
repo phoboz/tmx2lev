@@ -13,7 +13,8 @@ enum object_type
 {
   OBJECT_TYPE_UNKNOWN = 0,
   OBJECT_TYPE_ENEMY,
-  OBJECT_TYPE_ITEM
+  OBJECT_TYPE_ITEM,
+  OBJECT_TYPE_SAVETUBE
 };
 
 enum area_type
@@ -75,6 +76,8 @@ enum object_type get_object_type(const char *str)
     type = OBJECT_TYPE_ENEMY;
   else if (strcmp(str, "item") == 0)
     type = OBJECT_TYPE_ITEM;
+  else if (strcmp(str, "savetube") == 0)
+    type = OBJECT_TYPE_SAVETUBE;
   else
     type = OBJECT_TYPE_UNKNOWN;
 
@@ -257,7 +260,7 @@ printf("parsed map...\n");
           std::string dir_name = prop.GetLiteralProperty(std::string("direction"));
           enum direction dir = get_direction(dir_name.c_str());
 
-          printf("\t%s(%s) index=%d at: (%d, %d), facing %d(%s)\n", type_name.c_str(), object->GetName().c_str(), index, object->GetX(), object->GetY(), dir, dir_name.c_str());
+          printf("\t%s(%d) - \"%s\" index=%d at: (%d, %d), facing %d(%s)\n", type_name.c_str(), object_type, object->GetName().c_str(), index, object->GetX(), object->GetY(), dir, dir_name.c_str());
 
           fputc((char) object_type, fp);
           fputc((char) index, fp);
@@ -308,7 +311,7 @@ printf("parsed map...\n");
           std::string dir_name = prop.GetLiteralProperty(std::string("direction"));
           enum direction dir = get_direction(dir_name.c_str());
 
-          printf("\t%s(%s) at: (%d, %d) size(%d x %d), level %d, start (%d, %d), facing %d(%s)\n", type_name.c_str(), object->GetName().c_str(), object->GetX(), object->GetY(), object->GetWidth(), object->GetHeight(), level, start_x, start_y, dir, dir_name.c_str());
+          printf("\t%s(%d) - \"%s\" at: (%d, %d) size(%d x %d), level %d, start (%d, %d), facing %d(%s)\n", type_name.c_str(), area_type, object->GetName().c_str(), object->GetX(), object->GetY(), object->GetWidth(), object->GetHeight(), level, start_x, start_y, dir, dir_name.c_str());
 
           fputc((char) area_type, fp);
           write_word((short) level, fp);
