@@ -20,7 +20,8 @@ enum object_type
 enum area_type
 {
   AREA_TYPE_UNKNOWN,
-  AREA_TYPE_DOOR
+  AREA_TYPE_DOOR,
+  AREA_TYPE_DAMAGE
 };
 
 void write_word(short value, FILE *fp) {
@@ -115,6 +116,8 @@ enum area_type get_area_type(const char *str)
 
   if (strcmp(str, "door") == 0)
     type = AREA_TYPE_DOOR;
+  else if (strcmp(str, "damage") == 0)
+    type = AREA_TYPE_DAMAGE;
   else
     type = AREA_TYPE_UNKNOWN;
 
@@ -258,13 +261,15 @@ printf("parsed map...\n");
           const Tmx::PropertySet prop = object->GetProperties();
           int index = prop.GetNumericProperty(std::string("index"));
           std::string dir_name = prop.GetLiteralProperty(std::string("direction"));
+          int param = prop.GetNumericProperty(std::string("param"));
           enum direction dir = get_direction(dir_name.c_str());
 
-          printf("\t%s(%d) - \"%s\" index=%d at: (%d, %d), facing %d(%s)\n", type_name.c_str(), object_type, object->GetName().c_str(), index, object->GetX(), object->GetY(), dir, dir_name.c_str());
+          printf("\t%s(%d) - \"%s\" index=%d at: (%d, %d), facing %d(%s), param=%d\n", type_name.c_str(), object_type, object->GetName().c_str(), index, object->GetX(), object->GetY(), dir, dir_name.c_str(), param);
 
           fputc((char) object_type, fp);
           fputc((char) index, fp);
           fputc((char) dir, fp);
+          fputc((char) param, fp);
           write_word((short) object->GetX(), fp);
           write_word((short) object->GetY(), fp);
         }
