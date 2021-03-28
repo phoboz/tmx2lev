@@ -13,6 +13,7 @@ enum object_type
 {
   OBJECT_TYPE_UNKNOWN = 0,
   OBJECT_TYPE_ENEMY,
+  OBJECT_TYPE_BOSS,
   OBJECT_TYPE_ITEM,
   OBJECT_TYPE_SAVETUBE
 };
@@ -75,6 +76,8 @@ enum object_type get_object_type(const char *str)
 
   if (strcmp(str, "enemy") == 0)
     type = OBJECT_TYPE_ENEMY;
+  else if (strcmp(str, "boss") == 0)
+    type = OBJECT_TYPE_BOSS;
   else if (strcmp(str, "item") == 0)
     type = OBJECT_TYPE_ITEM;
   else if (strcmp(str, "savetube") == 0)
