@@ -128,9 +128,18 @@ enum area_type get_area_type(const char *str)
 }
 
 int main(int argc, char **argv) {
+  int data_size = 1;
+
   if (argc < 3) {
-    printf("Usage is: %s <tmxfile> <binfile>\n", argv[0]);
+    printf("Usage is: %s <tmxfile> <binfile> [datasize=1|2] \n", argv[0]);
     return 1;
+  }
+
+  if (argc > 3) {
+    data_size = atoi(argv[3]);
+    if (data_size != 2) {
+      data_size = 2;
+    }
   }
 
   printf("converting file: %s\n", argv[1]);
@@ -166,7 +175,14 @@ printf("parsed map...\n");
 
   int num_tiles = get_max_tiles(tileset);
   printf("Number of tiles: %d\n", num_tiles);
-  fputc((char) num_tiles, fp);
+  if (data_size == 2) {
+    write_word((short) num_tiles, fp);
+    printf("2-byte per tile\n");
+  }
+  else {
+    printf("1-byte per tile\n");
+    fputc((char) num_tiles, fp);
+  }
 
   std::vector<Tmx::Tile*> tiles = tileset->GetTiles();
   for (int i = 0; i < num_tiles; i++) {
@@ -215,15 +231,27 @@ printf("parsed map...\n");
 #ifdef VERTICAL
   for (int x = 0; x < w; x++) {
     for (int y = 0; y < h; y++) {
-      char tile_id = (char) layer->GetTileId(x, y);
-      fputc(tile_id, fp);
+      if (data_size == 2) {
+        short tile_id = (short) layer->GetTileId(x, y);
+        write_word(tile_id, fp);
+      }
+      else {
+        char tile_id = (char) layer->GetTileId(x, y);
+        fputc(tile_id, fp);
+      }
     }
   }
 #else
   for (int y = 0; y < h; y++) {
     for (int x = 0; x < w; x++) {
-      char tile_id = (char) layer->GetTileId(x, y);
-      fputc(tile_id, fp);
+      if (data_size == 2) {
+        short tile_id = (short) layer->GetTileId(x, y);
+        write_word(tile_id, fp);
+      }
+      else {
+        char tile_id = (char) layer->GetTileId(x, y);
+        fputc(tile_id, fp);
+      }
     }
   }
 #endif
