@@ -188,7 +188,9 @@ printf("parsed map...\n");
   for (int i = 0; i < num_tiles; i++) {
 
     std::string value;
+    std::string mask_string;
     char type = TILE_TYPE_NONE;
+    short mask = 0x0000;
 
     for (int j = 0; j < tiles.size(); j++) {
 
@@ -206,12 +208,16 @@ printf("parsed map...\n");
           type |= bg;
         }
 
-        printf("tile: %d %s(0x%x)\n", i, value.c_str(), type & 0xFF);
+        mask_string = prop.GetLiteralProperty(std::string("mask"));
+        mask = strtol(mask_string.c_str(), NULL, 16);
+
+        printf("tile: %d %s(0x%x) %s(0x%x)\n", i, value.c_str(), type & 0xFF, mask_string.c_str(), mask & 0xFFFF);
         break;
       }
     }
 
     fputc(type, fp);
+    write_word(mask, fp);
   }
 
   const Tmx::Layer *layer = map->GetLayer(0);
