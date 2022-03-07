@@ -220,6 +220,12 @@ printf("parsed map...\n");
     write_word(mask, fp);
   }
 
+  const int num_layers = map->GetNumLayers();
+  if (num_layers <= 0) {
+    printf("error: no layers exist\n");
+    return 1;
+  }
+
   const Tmx::Layer *layer = map->GetLayer(0);
   if (!layer) {
     printf("error: layer zero does not exist\n");
@@ -234,33 +240,43 @@ printf("parsed map...\n");
   write_word(w, fp);
   write_word(h, fp);
 
+  for (int i = 0; i < num_layers; i++) {
+
+    printf("Layer %d/%d\n", i + 1, num_layers);
+    const Tmx::Layer *layer = map->GetLayer(i);
+    if (!layer) {
+      printf("error: layer %d does not exist\n", i);
+      return 1;
+    }
+
 #ifdef VERTICAL
-  for (int x = 0; x < w; x++) {
-    for (int y = 0; y < h; y++) {
-      if (data_size == 2) {
-        short tile_id = (short) layer->GetTileId(x, y);
-        write_word(tile_id, fp);
-      }
-      else {
-        char tile_id = (char) layer->GetTileId(x, y);
-        fputc(tile_id, fp);
-      }
-    }
-  }
-#else
-  for (int y = 0; y < h; y++) {
     for (int x = 0; x < w; x++) {
-      if (data_size == 2) {
-        short tile_id = (short) layer->GetTileId(x, y);
-        write_word(tile_id, fp);
-      }
-      else {
-        char tile_id = (char) layer->GetTileId(x, y);
-        fputc(tile_id, fp);
+      for (int y = 0; y < h; y++) {
+        if (data_size == 2) {
+          short tile_id = (short) layer->GetTileId(x, y);
+          write_word(tile_id, fp);
+        }
+        else {
+          char tile_id = (char) layer->GetTileId(x, y);
+          fputc(tile_id, fp);
+        }
       }
     }
-  }
+#else
+    for (int y = 0; y < h; y++) {
+      for (int x = 0; x < w; x++) {
+        if (data_size == 2) {
+          short tile_id = (short) layer->GetTileId(x, y);
+          write_word(tile_id, fp);
+        }
+        else {
+          char tile_id = (char) layer->GetTileId(x, y);
+          fputc(tile_id, fp);
+        }
+      }
+    }
 #endif
+  }
 
   const int num_groups = map->GetNumObjectGroups();
   if (num_groups > 0)
