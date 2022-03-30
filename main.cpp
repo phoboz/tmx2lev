@@ -15,7 +15,8 @@ enum object_type
   OBJECT_TYPE_ENEMY,
   OBJECT_TYPE_BOSS,
   OBJECT_TYPE_ITEM,
-  OBJECT_TYPE_SAVETUBE
+  OBJECT_TYPE_SAVETUBE,
+  OBJECT_TYPE_LIGHT
 };
 
 enum area_type
@@ -82,6 +83,8 @@ enum object_type get_object_type(const char *str)
     type = OBJECT_TYPE_ITEM;
   else if (strcmp(str, "savetube") == 0)
     type = OBJECT_TYPE_SAVETUBE;
+  else if (strcmp(str, "light") == 0)
+    type = OBJECT_TYPE_LIGHT;
   else
     type = OBJECT_TYPE_UNKNOWN;
 
