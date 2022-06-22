@@ -16,7 +16,8 @@ enum object_type
   OBJECT_TYPE_BOSS,
   OBJECT_TYPE_ITEM,
   OBJECT_TYPE_SAVETUBE,
-  OBJECT_TYPE_LIGHT
+  OBJECT_TYPE_LIGHT,
+  OBJECT_TYPE_NPC
 };
 
 enum area_type
@@ -85,6 +86,8 @@ enum object_type get_object_type(const char *str)
     type = OBJECT_TYPE_SAVETUBE;
   else if (strcmp(str, "light") == 0)
     type = OBJECT_TYPE_LIGHT;
+  else if (strcmp(str, "npc") == 0)
+    type = OBJECT_TYPE_NPC;
   else
     type = OBJECT_TYPE_UNKNOWN;
 
@@ -131,7 +134,7 @@ enum area_type get_area_type(const char *str)
 }
 
 int main(int argc, char **argv) {
-  int data_size = 1;
+  int data_size = 2;
 
   if (argc < 3) {
     printf("Usage is: %s <tmxfile> <binfile> [datasize=1|2] \n", argv[0]);
@@ -140,7 +143,10 @@ int main(int argc, char **argv) {
 
   if (argc > 3) {
     data_size = atoi(argv[3]);
-    if (data_size != 2) {
+    if (data_size < 1) {
+      data_size = 1;
+    }
+    else if (data_size > 2) {
       data_size = 2;
     }
   }
@@ -328,6 +334,29 @@ printf("parsed map...\n");
           fputc((char) param, fp);
           write_word((short) object->GetX(), fp);
           write_word((short) object->GetY(), fp);
+
+          if (object_type == OBJECT_TYPE_NPC)
+          {
+            const Tmx::Polyline *polyline = object->GetPolyline();
+            if (polyline)
+            {
+              fputc((char) polyline->GetNumPoints(), fp);
+              printf("Polyline[%d]: ", polyline->GetNumPoints());
+              for (int p = 0; p < polyline->GetNumPoints(); p++)
+              {
+                const Tmx::Point point = polyline->GetPoint(p);
+                write_word((short) point.x, fp);
+                write_word((short) point.y, fp);
+                printf("(%d, %d) ", point.x, point.y);
+              }
+              printf("\n");
+            }
+            else
+            {
+              printf("No polyline\n");
+              fputc(0, fp);
+            }
+          }
         }
       }
     }
