@@ -24,7 +24,8 @@ enum area_type
 {
   AREA_TYPE_UNKNOWN,
   AREA_TYPE_DOOR,
-  AREA_TYPE_DAMAGE
+  AREA_TYPE_DAMAGE,
+  AREA_TYPE_TRIGGER
 };
 
 void write_word(short value, FILE *fp) {
@@ -127,6 +128,8 @@ enum area_type get_area_type(const char *str)
     type = AREA_TYPE_DOOR;
   else if (strcmp(str, "damage") == 0)
     type = AREA_TYPE_DAMAGE;
+  else if (strcmp(str, "trigger") == 0)
+    type = AREA_TYPE_TRIGGER;
   else
     type = AREA_TYPE_UNKNOWN;
 
