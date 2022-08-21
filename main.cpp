@@ -17,7 +17,8 @@ enum object_type
   OBJECT_TYPE_ITEM,
   OBJECT_TYPE_SAVETUBE,
   OBJECT_TYPE_LIGHT,
-  OBJECT_TYPE_NPC
+  OBJECT_TYPE_NPC,
+  OBJECT_TYPE_STATIC
 };
 
 enum area_type
@@ -89,6 +90,8 @@ enum object_type get_object_type(const char *str)
     type = OBJECT_TYPE_LIGHT;
   else if (strcmp(str, "npc") == 0)
     type = OBJECT_TYPE_NPC;
+  else if (strcmp(str, "static") == 0)
+    type = OBJECT_TYPE_STATIC;
   else
     type = OBJECT_TYPE_UNKNOWN;
 
