@@ -1,5 +1,5 @@
 CXX = g++
-CFLAGS = -Wall
+CFLAGS = -Wall -DVERTICAL
 INCFLAGS =
 LIBS = -lz
 LDFLAGS =
@@ -17,7 +17,7 @@ OBJS = tinystr.cpp tinyxml.cpp tinyxmlerror.cpp tinyxmlparser.cpp \
 all: tmx2bin
 
 tmx2bin: $(OBJS)
-	$(CXX) -o $(OUTPUT) $(OBJS) $(LIBS) $(LDFLAGS)
+	$(CXX) -o $(OUTPUT) $(CFLAGS) $(OBJS) $(LIBS) $(LDFLAGS)
 
 clean:
 	rm *.o; rm $(OUTPUT)

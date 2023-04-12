@@ -140,28 +140,34 @@ enum area_type get_area_type(const char *str)
 }
 
 int main(int argc, char **argv) {
+  bool vertical = false;
   int data_size = 2;
 
   if (argc < 3) {
-    printf("Usage is: %s <tmxfile> <binfile> [datasize=1|2] \n", argv[0]);
+    printf("Usage is: %s <tmxfile> <binfile> [--datasize 1|2] [--vertical]\n", argv[0]);
     return 1;
   }
 
   if (argc > 3) {
-    data_size = atoi(argv[3]);
-    if (data_size < 1) {
-      data_size = 1;
-    }
-    else if (data_size > 2) {
-      data_size = 2;
+    for (int i = 3; i < argc; i++) {
+      if (strcmp(argv[i], "--datasize") == 0) {
+        data_size = atoi(argv[i + 1]);
+        if (data_size < 1) {
+          data_size = 1;
+        }
+        else if (data_size > 2) {
+          data_size = 2;
+        }
+      }
+      else if (strcmp(argv[i], "--vertical") == 0) {
+        vertical = true;
+     }
     }
   }
 
   printf("converting file: %s\n", argv[1]);
   Tmx::Map *map = new Tmx::Map();
-printf("create map...\n");
   map->ParseFile(argv[1]);
-printf("parsed map...\n");
 
   if (map->HasError()) {
     printf("error code: %d\n", map->GetErrorCode());
@@ -207,7 +213,7 @@ printf("parsed map...\n");
     char type = TILE_TYPE_NONE;
     short mask = 0x0000;
 
-    for (int j = 0; j < tiles.size(); j++) {
+    for (unsigned int j = 0; j < tiles.size(); j++) {
 
       Tmx::Tile *tile = tiles[j];
       if (i == tile->GetId()) {
@@ -264,33 +270,34 @@ printf("parsed map...\n");
       return 1;
     }
 
-#ifdef VERTICAL
-    for (int x = 0; x < w; x++) {
-      for (int y = 0; y < h; y++) {
-        if (data_size == 2) {
-          short tile_id = (short) layer->GetTileId(x, y);
-          write_word(tile_id, fp);
-        }
-        else {
-          char tile_id = (char) layer->GetTileId(x, y);
-          fputc(tile_id, fp);
-        }
-      }
-    }
-#else
-    for (int y = 0; y < h; y++) {
+    if (vertical) {
       for (int x = 0; x < w; x++) {
-        if (data_size == 2) {
-          short tile_id = (short) layer->GetTileId(x, y);
-          write_word(tile_id, fp);
-        }
-        else {
-          char tile_id = (char) layer->GetTileId(x, y);
-          fputc(tile_id, fp);
+        for (int y = 0; y < h; y++) {
+          if (data_size == 2) {
+            short tile_id = (short) layer->GetTileId(x, y);
+            write_word(tile_id, fp);
+          }
+          else {
+            char tile_id = (char) layer->GetTileId(x, y);
+            fputc(tile_id, fp);
+          }
         }
       }
     }
-#endif
+    else {
+      for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+          if (data_size == 2) {
+            short tile_id = (short) layer->GetTileId(x, y);
+            write_word(tile_id, fp);
+          }
+          else {
+            char tile_id = (char) layer->GetTileId(x, y);
+            fputc(tile_id, fp);
+          }
+        }
+      }
+    }
   }
 
   const int num_groups = map->GetNumObjectGroups();
