@@ -142,6 +142,7 @@ enum area_type get_area_type(const char *str)
 int main(int argc, char **argv) {
   bool vertical = false;
   int data_size = 2;
+  bool bottom = false;
 
   if (argc < 3) {
     printf("Usage is: %s <tmxfile> <binfile> [--datasize 1|2] [--vertical]\n", argv[0]);
@@ -161,7 +162,10 @@ int main(int argc, char **argv) {
       }
       else if (strcmp(argv[i], "--vertical") == 0) {
         vertical = true;
-     }
+      }
+      else if (strcmp(argv[i], "--bottom") == 0) {
+        bottom = true;
+      }
     }
   }
 
@@ -339,14 +343,24 @@ int main(int argc, char **argv) {
           int param = prop.GetNumericProperty(std::string("param"));
           enum direction dir = get_direction(dir_name.c_str());
 
-          printf("\t%s(%d) - \"%s\" index=%d at: (%d, %d), facing %d(%s), param=%d\n", type_name.c_str(), object_type, object->GetName().c_str(), index, object->GetX(), object->GetY(), dir, dir_name.c_str(), param);
+          int obj_y;
+          if (!bottom)
+          {
+            obj_y = object->GetY();
+          }
+          else
+          {
+            obj_y = object->GetY() + object->GetHeight();
+          }
+
+          printf("\t%s(%d) - \"%s\" index=%d at: (%d, %d), facing %d(%s), param=%d\n", type_name.c_str(), object_type, object->GetName().c_str(), index, object->GetX(), obj_y, dir, dir_name.c_str(), param);
 
           fputc((char) object_type, fp);
           fputc((char) index, fp);
           fputc((char) dir, fp);
           fputc((char) param, fp);
           write_word((short) object->GetX(), fp);
-          write_word((short) object->GetY(), fp);
+          write_word((short) obj_y, fp);
 
           if (object_type == OBJECT_TYPE_NPC)
           {
