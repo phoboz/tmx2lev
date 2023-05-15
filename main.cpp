@@ -140,8 +140,9 @@ enum area_type get_area_type(const char *str)
 }
 
 int main(int argc, char **argv) {
-  bool vertical = false;
   int data_size = 2;
+  bool vertical = false;
+  bool legacy = false;
   bool bottom = false;
 
   if (argc < 3) {
@@ -162,6 +163,9 @@ int main(int argc, char **argv) {
       }
       else if (strcmp(argv[i], "--vertical") == 0) {
         vertical = true;
+      }
+      else if (strcmp(argv[i], "--legacy") == 0) {
+        legacy = true;
       }
       else if (strcmp(argv[i], "--bottom") == 0) {
         bottom = true;
@@ -201,48 +205,54 @@ int main(int argc, char **argv) {
   int num_tiles = get_max_tiles(tileset);
   printf("Number of tiles: %d\n", num_tiles);
   if (data_size == 2) {
-    write_word((short) num_tiles, fp);
     printf("2-byte per tile\n");
+    if (!legacy) {
+      write_word((short) num_tiles, fp);
+    }
   }
   else {
     printf("1-byte per tile\n");
-    fputc((char) num_tiles, fp);
+    if (!legacy) {
+      fputc((char) num_tiles, fp);
+    }
   }
 
-  std::vector<Tmx::Tile*> tiles = tileset->GetTiles();
-  for (int i = 0; i < num_tiles; i++) {
+  if (!legacy) {
+    std::vector<Tmx::Tile*> tiles = tileset->GetTiles();
+    for (int i = 0; i < num_tiles; i++) {
 
-    std::string value;
-    std::string mask_string;
-    char type = TILE_TYPE_NONE;
-    short mask = 0x0000;
+      std::string value;
+      std::string mask_string;
+      char type = TILE_TYPE_NONE;
+      short mask = 0x0000;
 
-    for (unsigned int j = 0; j < tiles.size(); j++) {
+      for (unsigned int j = 0; j < tiles.size(); j++) {
 
-      Tmx::Tile *tile = tiles[j];
-      if (i == tile->GetId()) {
+        Tmx::Tile *tile = tiles[j];
+        if (i == tile->GetId()) {
 
-        const Tmx::PropertySet prop = tile->GetProperties();
-        value = prop.GetLiteralProperty(std::string("type"));
+          const Tmx::PropertySet prop = tile->GetProperties();
+          value = prop.GetLiteralProperty(std::string("type"));
 
-        type = get_tile_type(value.c_str());
-        if (type == TILE_TYPE_OVERLAY) {
-          std::string value = prop.GetLiteralProperty(std::string("bg_tile"));
-          char bg = (char) atoi(value.c_str());
-          bg <<= 1;
-          type |= bg;
+          type = get_tile_type(value.c_str());
+          if (type == TILE_TYPE_OVERLAY) {
+            std::string value = prop.GetLiteralProperty(std::string("bg_tile"));
+            char bg = (char) atoi(value.c_str());
+            bg <<= 1;
+            type |= bg;
+          }
+
+          mask_string = prop.GetLiteralProperty(std::string("mask"));
+          mask = strtol(mask_string.c_str(), NULL, 16);
+
+          printf("tile: %d %s(0x%x) %s(0x%x)\n", i, value.c_str(), type & 0xFF, mask_string.c_str(), mask & 0xFFFF);
+          break;
         }
-
-        mask_string = prop.GetLiteralProperty(std::string("mask"));
-        mask = strtol(mask_string.c_str(), NULL, 16);
-
-        printf("tile: %d %s(0x%x) %s(0x%x)\n", i, value.c_str(), type & 0xFF, mask_string.c_str(), mask & 0xFFFF);
-        break;
       }
-    }
 
-    fputc(type, fp);
-    write_word(mask, fp);
+      fputc(type, fp);
+      write_word(mask, fp);
+    }
   }
 
   const int num_layers = map->GetNumLayers();
@@ -302,6 +312,10 @@ int main(int argc, char **argv) {
         }
       }
     }
+  }
+
+  if (legacy) {
+    return 0;
   }
 
   const int num_groups = map->GetNumObjectGroups();
